@@ -1,0 +1,129 @@
+{"frames": {
+
+"defeat.png":
+{
+	"frame": {"x":0,"y":0,"w":160,"h":59},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":160,"h":59},
+	"sourceSize": {"w":160,"h":59},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"field.png":
+{
+	"frame": {"x":0,"y":59,"w":201,"h":201},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":201,"h":201},
+	"sourceSize": {"w":201,"h":201},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"hit.png":
+{
+	"frame": {"x":201,"y":59,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"invalid_cell.png":
+{
+	"frame": {"x":0,"y":260,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"miss.png":
+{
+	"frame": {"x":21,"y":260,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"play_game.png":
+{
+	"frame": {"x":42,"y":260,"w":189,"h":48},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":189,"h":48},
+	"sourceSize": {"w":189,"h":48},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"rotate.png":
+{
+	"frame": {"x":0,"y":308,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"ship_1.png":
+{
+	"frame": {"x":21,"y":308,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"ship_2.png":
+{
+	"frame": {"x":42,"y":308,"w":41,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":41,"h":21},
+	"sourceSize": {"w":41,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"ship_3.png":
+{
+	"frame": {"x":83,"y":308,"w":61,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":61,"h":21},
+	"sourceSize": {"w":61,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"ship_4.png":
+{
+	"frame": {"x":144,"y":308,"w":81,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":81,"h":21},
+	"sourceSize": {"w":81,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"valid_cell.png":
+{
+	"frame": {"x":0,"y":329,"w":21,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":21,"h":21},
+	"sourceSize": {"w":21,"h":21},
+	"pivot": {"x":0.5,"y":0.5}
+},
+"victory.png":
+{
+	"frame": {"x":21,"y":329,"w":155,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":155,"h":58},
+	"sourceSize": {"w":155,"h":58},
+	"pivot": {"x":0.5,"y":0.5}
+}},
+"meta": {
+	"app": "http://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "sprites.png",
+	"format": "RGBA8888",
+	"size": {"w":231,"h":387},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:937ba18035ba5461ce7920b062417bb5:2d0737c698fe4fec5494331547da16b4:1eabdf11f75e3a4fe3147baf7b5be24b$"
+}
+}
