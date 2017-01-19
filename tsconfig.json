@@ -1,10 +1,11 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
-        "target": "es6",
-        "module": "amd",
+        "target": "es5",
+        "module": "commonjs",
         "sourceMap": true,
         "strictNullChecks": true,
-        "outFile": "bundle.js"
+        "noImplicitAny": true,
+        "lib": ["dom","es6","dom","scripthost"]                
     }
 }

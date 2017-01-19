@@ -1,4 +1,4 @@
-
+import {$on} from './helpers';
 
 function getRandomInt(min, max) {
   min = Math.ceil(min);
@@ -391,12 +391,12 @@ class PlacingModel {
 	
 }
 
-declare var renderer;
-declare var stage;
-declare var textures;
-declare var gameUI;
+var renderer;
+var stage;
+var textures;
+var gameUI;
 
-function main() {
+export function main() {
 	PIXI.ticker.shared.autoStart = false;
 	renderer = PIXI.autoDetectRenderer(800, 600);
 	renderer.backgroundColor = 0xffb6c1; // "lightpink";
@@ -856,6 +856,7 @@ function setup() {
 
 	//renderer.render(stage);
 }
+
 
 
 $on(window, 'load', main);

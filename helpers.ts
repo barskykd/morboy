@@ -1,5 +1,5 @@
-declare var $on;
 
-$on = function (target, type, callback, useCapture?) {
+
+export let $on = function (target: any, type: string, callback: any, useCapture?:boolean) {
     target.addEventListener(type, callback, !!useCapture);
 }
