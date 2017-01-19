@@ -4,8 +4,7 @@
         "target": "es5",
         "module": "commonjs",
         "sourceMap": true,
-        "strictNullChecks": true,
-        "noImplicitAny": true,
+        "strictNullChecks": true,        
         "lib": ["dom","es6","dom","scripthost"]                
     }
 }

@@ -1,116 +1,42 @@
 import {$on} from './helpers';
 
-function getRandomInt(min, max) {
+import * as Nested from 'nestedtypes'
+
+interface IShip {
+	position: ShipPosition | undefined;
+	readonly hp: number;
+	length: number;
+	readonly player: Player;	
+}
+
+var ShipModel = Nested.Model.extend({
+	defaults: {
+		length: 0 as number,
+		hp: 0 as number,
+		position: undefined as ShipPosition | undefined,
+		player: "me" as Player
+	},
+
+	collection: {
+		addShip(sh: {
+			length: number,
+			player: Player
+		}) {
+			let sh2 = Object.assign({hp: sh.length, position:undefined}, sh);			
+			let result = new ShipModel(sh2);
+			result.hp = result.length;
+			this.add(result);
+			return result;
+		}
+	}	
+});
+
+type Ship = typeof ShipModel;
+
+function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min)) + min;
-}
-
-interface Change {
-	type: 'add' | 'remove' | 'move'
-	id: any 
-	after?: any
-}
-
-function compare_unord(ids1: any[], ids2: any[]): Change[] {
-	let s1 = new Set(ids1);
-	let s2 = new Set(ids2);
-
-	let result: Change[] = []
-	
-	for (let id of ids1) {
-		if (!s2.has(id)) {
-			result.push({
-				type: 'remove',
-				id
-			})
-		}
-	}
-	for (let id of ids2) {
-		if (!s1.has(id)) {
-			result.push({
-				type: 'add',
-				id
-			})
-		}
-	}
-	return result;
-}
-
-function compare_ord(ids1: any[], ids2: any[]): Change[] {
-	let s1 = new Set(ids1);
-	let s2 = new Set(ids2);
-	let result: Change[] = []
-
-	function longest_monotonic(array) {
-		if (!array.length) {
-			return [];
-		}
-		let front = [array[0]]
-		for (let i = 1; i < array.length; ++i) {
-			let v = array[i];
-			if (v > front[0]) {
-				if (v > front[front.length - 1]) {
-					front.push(v);
-				} else {
-					front = front.filter(x => (x < v));
-					front.push(v);
-				}
-			}
-		}
-
-		if (front.length >= (array.length / 2)) {
-			return front;
-		}
-
-		let back = [array[array.length - 1]];
-
-		for (let i = array.length - 1; i >= 0; --i) {
-			let v = array[i];
-			if (v < back[back.length - 1]) {
-				if (v < back[0]) {
-					back.unshift(v);
-				} else {
-					back = back.filter(x => (x > v));
-					back.unshift(v);
-				}
-			}
-		}
-
-		if (back.length > front.length) {
-			return back;
-		}
-		return front;		
-	}
-
-	let indices2 = Object.assign({}, ...ids2.map((v, idx)=> ({v:idx})));
-	let indices1 = ids1.map(v => indices2[v]).filter(v => v !== undefined);
-	let stays_in_place = new Set(longest_monotonic(indices1).map(idx => ids2[idx]));
-
-	for (let id of ids2) {
-		if (!s1.has(id)) {
-			result.push({
-				type: 'add',
-				id,
-				after: ids2[indices2[id] - 1]
-			})
-		}
-	}
-	for (let id of ids1) {
-		if (!s2.has(id)) {
-			result.push({
-				type: 'remove',
-				id
-			})
-		} else if (!stays_in_place.has(id)) {
-			result.push({
-				type: 'move',
-				id,
-				after: ids2[indices2[id] - 1]
-			})
-		}
-	}
-	return result;
 }
 
 type ShipOrient = 'h' | 'v';
@@ -193,17 +119,7 @@ class Cell {
 	}
 }
 
-class Ship {
-	position: ShipPosition | undefined;
-	hp: number;
-	constructor(		 
-		public readonly id,
-		public length: number,		 
-		public readonly player: Player
-		) {		
-			this.hp = length;
-	}	
-}
+
 
 class Field {
 	constructor(public width: number, public height:number) {		
@@ -226,10 +142,9 @@ class Game {
 		}
 	}
 
-	private ships: Ship[] = [];
 	private shots: Shot[] = [];	
-
-	constructor() {
+	private ships = new ShipModel.Collection();
+	constructor() {		
 		this.rules.ships.forEach(l => this.createShip('me', l));
 		this.rules.ships.forEach(l => this.createShip('ai', l));
 	}
@@ -238,19 +153,12 @@ class Game {
 		return new Field(this.rules.field.width, this.rules.field.height);
 	}
 
-	private createShip(player: Player, length: number) {
-		let new_id = Math.max(0, ...this.ships.map(x => x.id)) + 1;
-		let result = new Ship(new_id, length, player);
-		this.ships.push(result);
-		return result;
+	private createShip(player: Player, length: number) {		
+		return this.ships.addShip({length, player});				
 	}
 
 	shipById(id): Ship {
-		let result = this.ships.find(x => x.id == id);
-		if (!result) {
-			throw new Error('Invalid ship_id: ' + id);
-		}
-		return result;
+		return this.ships.get(id);		
 	}
 
 	shipsByPlayer(player: Player): Ship[] {
@@ -460,7 +368,7 @@ class FieldView extends PIXI.Container {
 		this.addChild(this.fieldSprite);
 
 		for (let sh of game.shipsByPlayer(player)) {
-			let sh_sp = new ShipSprite(sh.length, sh.id);
+			let sh_sp = new ShipSprite(sh.length, sh.cid);
 			sh_sp.visible = false;
 			this.shipSprites.push(sh_sp);
 			this.addChild(sh_sp);
@@ -577,7 +485,7 @@ class PlaceShipsControl extends PIXI.Container {
 		let ship = game.shipsByPlayer('me').find(x => !x.position);
 		console.log('_pick_next_ship', ship);
 		if (ship) {
-			this.current_ship_id = ship.id;
+			this.current_ship_id = ship.cid;
 			this._render();
 		} else {
 			this.current_ship_id = undefined;	
