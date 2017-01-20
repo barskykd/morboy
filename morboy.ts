@@ -1,6 +1,6 @@
 import {$on} from './helpers';
 
-import {ShipModel, Ship, ShipOrient, Game, Field, Cell, ShipPosition, Player} from './model';
+import {Ship, ShipOrient, Game, Field, Cell, ShipPosition, Player} from './model';
 
 function toggle_orient(orient?: ShipOrient): ShipOrient {
 	switch(orient) {
@@ -20,7 +20,7 @@ var gameUI;
 export function main() {
 	PIXI.ticker.shared.autoStart = false;
 	renderer = PIXI.autoDetectRenderer(800, 600);
-	renderer.backgroundColor = 0xffb6c1; // "lightpink";
+	renderer.backgroundColor = 0xFFFFFF; // "lightpink";
 	stage = new PIXI.Container();
 
 	PIXI.loader
@@ -36,8 +36,8 @@ export function main() {
 }
 
 class ShipSprite extends PIXI.Sprite {		
-	constructor(ship_length: number, public ship_id:number) {
-		super(textures['ship_' + ship_length + '.png']);				
+	constructor(public readonly ship: Ship) {
+		super(textures['ship_' + ship.length + '.png']);				
 	}
 
 	setOrientation(orient: ShipOrient) {
@@ -81,7 +81,7 @@ class FieldView extends PIXI.Container {
 		this.addChild(this.fieldSprite);
 
 		for (let sh of game.shipsByPlayer(player)) {
-			let sh_sp = new ShipSprite(sh.length, sh.cid);
+			let sh_sp = new ShipSprite(sh);
 			sh_sp.visible = false;
 			this.shipSprites.push(sh_sp);
 			this.addChild(sh_sp);
@@ -120,24 +120,22 @@ class FieldView extends PIXI.Container {
 
 	update() {
 		for (let sh_sprite of this.shipSprites) {
-			let sh = game.shipById(sh_sprite.ship_id);
-			if (sh) {
-				if (sh.position) {
-					if (this.player == 'me') {
-						sh_sprite.visible = true;
-					} else {
-						sh_sprite.visible = sh.hp <= 0;
-					}
-					
-					sh_sprite.position = this.fieldSprite.cellToPoint(sh.position.cell)
-					sh_sprite.setOrientation(sh.position.orient);
+			let sh = sh_sprite.ship;
+			
+			if (sh.position) {
+				if (this.player == 'me') {
+					sh_sprite.visible = true;
 				} else {
-					sh_sprite.visible = false;
-				}				
+					sh_sprite.visible = sh.hp <= 0;
+				}
+				
+				sh_sprite.position = this.fieldSprite.cellToPoint(sh.position.cell)
+				sh_sprite.setOrientation(sh.position.orient);
 			} else {
-				console.exception('No ship with id = ' + sh_sprite.ship_id);
-			}
-		}
+				sh_sprite.visible = false;
+			}				
+		} 
+		
 
 		for (let shot of game.shotsByPlayer(this.player)) {
 			let sh_sprite = this.shotSprites[shot.id];
@@ -155,7 +153,7 @@ class FieldView extends PIXI.Container {
 class PlaceShipsControl extends PIXI.Container {	
 	fieldView: FieldView = new FieldView('me');
 	current_ship_sprite?: ShipSprite;
-	current_ship_id: number | undefined;
+	current_ship: Ship | undefined;
 		
 	constructor () {
 		super();		
@@ -184,12 +182,11 @@ class PlaceShipsControl extends PIXI.Container {
 	}
 
 	_move_ship(cell: Cell) {
-		if (this.current_ship_id) {
-			let ship = game.shipById(this.current_ship_id);
-			if (ship.position) {
-				ship.position = new ShipPosition(cell, ship.position.orient);
+		if (this.current_ship) {			
+			if (this.current_ship.position) {
+				this.current_ship.position = new ShipPosition(cell, this.current_ship.position.orient);
 			} else {
-				ship.position = new ShipPosition(cell, 'h');
+				this.current_ship.position = new ShipPosition(cell, 'h');
 			}			
 		}
 	}		
@@ -198,10 +195,10 @@ class PlaceShipsControl extends PIXI.Container {
 		let ship = game.shipsByPlayer('me').find(x => !x.position);
 		console.log('_pick_next_ship', ship);
 		if (ship) {
-			this.current_ship_id = ship.cid;
+			this.current_ship = ship;
 			this._render();
 		} else {
-			this.current_ship_id = undefined;	
+			this.current_ship = undefined;	
 			this.fieldView.update();
 			this._render();		
 			this.emit('ships_placed');
@@ -209,7 +206,7 @@ class PlaceShipsControl extends PIXI.Container {
 	}
 
 	_can_place() {	
-		if (this.current_ship_id) {
+		if (this.current_ship) {
 			return game.isValidPlacement('me');
 		}
 		return false;		
@@ -222,7 +219,7 @@ class PlaceShipsControl extends PIXI.Container {
 	}
 
 	_cell_mousemove(cell, point) {		
-		if (this.current_ship_id) {
+		if (this.current_ship) {
 			this._move_ship(cell);
 			if (this._can_place()) {					
 				renderer.view.style.cursor = 'pointer';
@@ -234,9 +231,9 @@ class PlaceShipsControl extends PIXI.Container {
 	}	
 
 	_mouse_out() {
-		if (this.current_ship_id) {
+		if (this.current_ship) {
 			renderer.view.style.cursor = 'default';
-			game.shipById(this.current_ship_id).position = undefined;			
+			this.current_ship.position = undefined;			
 			this._render();
 		}
 	}
@@ -246,14 +243,12 @@ class PlaceShipsControl extends PIXI.Container {
 	}
 
 	_right_click(e) {
-		if (this.current_ship_id) {
-			let ship = game.shipById(this.current_ship_id); 
-			if (ship.position) {
-				ship.position.orient = toggle_orient(ship.position.orient);
+		if (this.current_ship) {			
+			if (this.current_ship.position) {
+				this.current_ship.position.orient = toggle_orient(this.current_ship.position.orient);
 			} else {
-				ship.position = new ShipPosition(new Cell(0, 0), 'h');
-			}
-			
+				this.current_ship.position = new ShipPosition(new Cell(0, 0), 'h');
+			}			
 			this._render();			
 		}
 	}

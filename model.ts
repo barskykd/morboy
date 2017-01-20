@@ -1,4 +1,3 @@
-import * as Nested from 'nestedtypes'
 
 export class ShipPosition {
 	cell: Cell;
@@ -11,36 +10,14 @@ export class ShipPosition {
 
 export type ShipOrient = 'h' | 'v';
 
-export interface IShip {
-	position: ShipPosition | undefined;
-	readonly hp: number;
-	length: number;
-	readonly player: Player;	
+export class Ship {
+    public hp: number;
+    public position: ShipPosition | undefined;
+    constructor(public readonly length:number, 
+                public readonly player: Player) {
+        this.hp = length;
+    }
 }
-
-export var ShipModel = Nested.Model.extend({
-	defaults: {
-		length: 0 as number,
-		hp: 0 as number,
-		position: undefined as ShipPosition | undefined,
-		player: "me" as Player
-	},
-
-	collection: {
-		addShip(sh: {
-			length: number,
-			player: Player
-		}) {
-			let sh2 = Object.assign({hp: sh.length, position:undefined}, sh);			
-			let result = new ShipModel(sh2);
-			result.hp = result.length;
-			this.add(result);
-			return result;
-		}
-	}	
-});
-
-export type Ship = typeof ShipModel;
 
 export class Cell {
 	readonly x: number;
@@ -76,10 +53,10 @@ export class Game {
 	}
 
 	private shots: Shot[] = [];	
-	private ships = new ShipModel.Collection();
-	constructor() {		
+    private ships: Ship[] = [];
+	constructor() {		        
 		this.rules.ships.forEach(l => this.createShip('me', l));
-		this.rules.ships.forEach(l => this.createShip('ai', l));
+		this.rules.ships.forEach(l => this.createShip('ai', l));        
 	}
 
 	_field() {
@@ -87,12 +64,8 @@ export class Game {
 	}
 
 	private createShip(player: Player, length: number) {		
-		return this.ships.addShip({length, player});				
-	}
-
-	shipById(id): Ship {
-		return this.ships.get(id);		
-	}
+        return this.ships.push(new Ship(length, player));				
+	}	
 
 	shipsByPlayer(player: Player): Ship[] {
 		return this.ships.filter(x => x.player == player);
