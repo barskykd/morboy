@@ -214,7 +214,7 @@ class FieldView extends PIXI.Container {
 				this.shotSprites[shot.id] = sh_sprite;
 				sh_sprite.position = this.fieldSprite.cellToPoint(shot.cell);
 				if (shot.auto) {					
-					sh_sprite.alpha = 0.5;
+					sh_sprite.alpha = 0.1;
 				}
 				animate_shot(sh_sprite);
 			}
