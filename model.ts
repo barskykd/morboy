@@ -39,7 +39,7 @@ export class Field {
 export type Player = 'me' | 'ai';
 
 class Shot {
-	constructor (readonly id, readonly cell: Cell, readonly player: Player, readonly hit: boolean) {		
+	constructor (readonly id, readonly cell: Cell, readonly player: Player, readonly hit: boolean, readonly auto:boolean) {		
 	}
 }
 
@@ -106,7 +106,7 @@ export class Game {
 		return undefined;
 	}
 
-	addShot(cell: Cell, player: Player): Shot | undefined {
+	addShot(cell: Cell, player: Player, auto: boolean = false): Shot | undefined {
 		if (!is_cell_valid(cell.x, cell.y, this._field())) {
 			return;
 		}
@@ -121,7 +121,7 @@ export class Game {
 
 		let new_id = Math.max(0, ...this.shots.map(x => x.id)) + 1;
 
-		let new_shot = new Shot(new_id, cell, player, hit);
+		let new_shot = new Shot(new_id, cell, player, hit, auto);
 		this.shots.push(new_shot);
 
 		if (ship) {
@@ -130,14 +130,14 @@ export class Game {
 				let {startx, endx, starty, endy} = ship_ends(ship.length, ship.position);
 				for (let x = startx-1; x <= endx+1; ++x) {
 					for (let y = starty-1; y <= endy+1; ++y) {
-						this.addShot(new Cell(x, y), player);
+						this.addShot(new Cell(x, y), player, true);
 					}
 				}	
 			} else {
-				this.addShot(new Cell(cell.x-1, cell.y-1), player);
-				this.addShot(new Cell(cell.x+1, cell.y-1), player);
-				this.addShot(new Cell(cell.x-1, cell.y+1), player);
-				this.addShot(new Cell(cell.x+1, cell.y+1), player);
+				this.addShot(new Cell(cell.x-1, cell.y-1), player, true);
+				this.addShot(new Cell(cell.x+1, cell.y-1), player, true);
+				this.addShot(new Cell(cell.x-1, cell.y+1), player, true);
+				this.addShot(new Cell(cell.x+1, cell.y+1), player, true);
 			}
 		}
 		return new_shot;

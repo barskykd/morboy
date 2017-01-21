@@ -1,5 +1,8 @@
 import {$on} from './helpers';
 
+import Easing from './easing';
+import AnimationManager from './animation_manager';
+
 import {Ship, ShipOrient, Game, Field, Cell, ShipPosition, Player} from './model';
 
 function toggle_orient(orient?: ShipOrient): ShipOrient {
@@ -16,11 +19,20 @@ var renderer;
 var stage;
 var textures;
 var gameUI;
+let current_view: PIXI.DisplayObject | null = null;
 
-export function main() {
-	PIXI.ticker.shared.autoStart = false;
+var do_render = () => {
+	if (renderer && current_view) {
+		renderer.render(current_view);
+	}
+};
+
+let animation_manager = new AnimationManager(do_render);
+
+export function main() {	
+	PIXI.ticker.shared.autoStart = true;	
 	renderer = PIXI.autoDetectRenderer(800, 600);
-	renderer.backgroundColor = 0xFFFFFF; // "lightpink";
+	renderer.backgroundColor = 0xFFFFFF; // "white";
 	stage = new PIXI.Container();
 
 	PIXI.loader
@@ -35,20 +47,77 @@ export function main() {
         });	
 }
 
-class ShipSprite extends PIXI.Sprite {		
+class ShipSprite extends PIXI.Sprite {			
+	movingTo: PIXI.Point;	
+
 	constructor(public readonly ship: Ship) {
 		super(textures['ship_' + ship.length + '.png']);				
 	}
 
 	setOrientation(orient: ShipOrient) {
 		if (orient == 'v') {						
-			this.rotation = Math.PI / 2
-			this.pivot.set(0, this.height);
-		} else {						
-			this.rotation = 0;
-			this.pivot.set(0, 0);
+			animation_manager.animate({
+				obj: this,
+				prop: 'rotation',
+				start_v: this.rotation,
+				d_v: Math.PI / 2 - this.rotation,
+				easing: Easing.easeInOutSine,
+				duration: 20
+			})
+			animation_manager.animate({
+				obj: this.pivot,
+				prop: 'y',
+				start_v: this.pivot.y,
+				d_v: this.height - this.pivot.y,
+				easing: Easing.easeInOutSine,
+				duration: 20
+			})			
+		} else {	
+			animation_manager.animate({
+				obj: this,
+				prop: 'rotation',
+				start_v: this.rotation,
+				d_v: 0 - this.rotation,
+				easing: Easing.easeInOutSine,
+				duration: 20
+			})
+			animation_manager.animate({
+				obj: this.pivot,
+				prop: 'y',
+				start_v: this.pivot.y,
+				d_v: 0 - this.pivot.y,
+				easing: Easing.easeInOutSine,
+				duration: 20
+			})									
 		}
 	}		
+
+	moveAnimated(pos: PIXI.Point) {				
+		if (pos.equals(this.position)) {
+			return;
+		}		
+		if (this.movingTo && this.movingTo.equals(pos)) {
+			return;
+		}
+
+		animation_manager.animate({
+			obj: this,
+			prop: 'x',
+			start_v: this.x,
+			d_v: pos.x - this.x,
+			easing: Easing.easeInOutSine,
+			duration: 20
+		});
+
+		animation_manager.animate({
+			obj: this,
+			prop: 'y',
+			start_v: this.y,
+			d_v: pos.y - this.y,
+			easing: Easing.easeInOutSine,
+			duration: 20
+		});
+	}
 }
 
 class FieldSprite extends PIXI.Sprite {
@@ -128,8 +197,7 @@ class FieldView extends PIXI.Container {
 				} else {
 					sh_sprite.visible = sh.hp <= 0;
 				}
-				
-				sh_sprite.position = this.fieldSprite.cellToPoint(sh.position.cell)
+				sh_sprite.moveAnimated(this.fieldSprite.cellToPoint(sh.position.cell))				
 				sh_sprite.setOrientation(sh.position.orient);
 			} else {
 				sh_sprite.visible = false;
@@ -145,9 +213,29 @@ class FieldView extends PIXI.Container {
 				this.addChild(sh_sprite);
 				this.shotSprites[shot.id] = sh_sprite;
 				sh_sprite.position = this.fieldSprite.cellToPoint(shot.cell);
+				if (shot.auto) {					
+					sh_sprite.alpha = 0.5;
+				}
+				animate_shot(sh_sprite);
 			}
 		}
 	}
+}
+
+function animate_shot(sh_sprite: PIXI.Sprite) {
+	sh_sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+	
+	sh_sprite.pivot.set(sh_sprite.width / 2, sh_sprite.height / 2)
+	sh_sprite.position.set(sh_sprite.position.x + sh_sprite.width / 2, sh_sprite.position.y + sh_sprite.height / 2);
+	
+	animation_manager.animate({
+		obj: sh_sprite.scale,
+		prop:'x',
+		start_v: 0,
+		d_v: 1,
+		easing: Easing.easeOutSine,
+		duration: 20
+	});	
 }
 
 class PlaceShipsControl extends PIXI.Container {	
@@ -175,10 +263,9 @@ class PlaceShipsControl extends PIXI.Container {
 		this.emit('ships_placed');
 	}
 
-	_render() {
-		let ticker = PIXI.ticker.shared;
+	_render() {		
 		this.fieldView.update();
-		ticker.update();
+		do_render();
 	}
 
 	_move_ship(cell: Cell) {
@@ -278,13 +365,12 @@ class PlacingUi extends PIXI.Container {
 		this.addChild(this.autoPlaceButton);		
 
 		this.autoPlaceButton.on('click', () => this.field.autoplace());
-
-		PIXI.ticker.shared.add(() => this.render());
+		
 		this.field.on('ships_placed', ships => this.emit('ships_placed', ships));
 	}	
 
 	render() {
-		renderer.render(this)
+		do_render();		
 	}			
 }
 
@@ -332,7 +418,7 @@ class BattleUi extends PIXI.Container
 		this.field2.on('cell_click', cell => {
 			let sh = game.addShot(cell, 'ai');
 			this.field2.update();
-			this.render();		
+			do_render();	
 			if (sh) {
 				console.log('Player shot at', cell.x, cell.y, sh.hit);
 			}				
@@ -346,7 +432,7 @@ class BattleUi extends PIXI.Container
 
 		
 
-		this.render();		
+		do_render();	
 	}
 
 	private ai_shot() {
@@ -360,15 +446,11 @@ class BattleUi extends PIXI.Container
 				break;
 			}
 			this.field1.update();
-			this.render();
+			do_render();
 		}
 		this.field1.update();
-		this.render();
-	}
-
-	render() {
-		renderer.render(this);
-	}
+		do_render();
+	}	
 
 	_click() {
 		if (this.on_finished) {
@@ -438,37 +520,38 @@ class GameUi
 
 	toSplash() {		
 		game = new Game();		
-		renderer.render(this.splash);		
+		current_view = this.splash;
+		do_render();		
 	}
 
 	toPlacing() {		
 				
 		this.placingUi = new PlacingUi();	
-		this.placingUi.render();	
+		current_view = this.placingUi;
+		do_render();		
 		this.placingUi.on('ships_placed', ships => this.toBattle(ships));
 	}
 
 	toBattle(ships: Ship[]) {
 		
 		this.battleUi = new BattleUi(ships);
-		this.battleUi.render();
+		current_view = this.battleUi;
+		do_render();
 		this.battleUi.on('game_over', () => this.toGameOver());
 	}
 
 	toGameOver() {
 		switch (game.whichPlayerWon()) {
-			case 'ai': renderer.render(this.playerLost); break;
-			case 'me': renderer.render(this.playerWon); break;
+			case 'ai': current_view = this.playerLost; break;
+			case 'me': current_view = this.playerWon; break;			
 		}
+		do_render();
 	}	
 }
 
 function setup() {
 	textures = PIXI.loader.resources["assets/sprites.json"].textures; 
-
-	gameUI = new GameUi(stage);	
-
-	//renderer.render(stage);
+	gameUI = new GameUi(stage);		
 }
 
 
